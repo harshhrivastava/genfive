@@ -7,8 +7,11 @@ enum MessageType {
 
 abstract class Message {
   final String messageId;
+  final DateTime createdAt;
 
-  Message() : messageId = const Uuid().v4();
+  Message()
+    : messageId = const Uuid().v4(),
+      createdAt = DateTime.now();
 
   factory Message.fromType(MessageType type, String message) {
     switch(type) {
