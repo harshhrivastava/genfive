@@ -9,6 +9,7 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   final TextEditingController _textEditingController = TextEditingController();
+  String text = '';
 
   @override
   Widget build(BuildContext context) {
@@ -44,15 +45,21 @@ class _HomeState extends State<Home> {
                   child: Center(
                     child: TextField(
                       controller: _textEditingController,
+                      onChanged: (String newText) {
+                        setState(() {
+                          text = newText;
+                        });
+                      },
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 20.0,
                         fontWeight: FontWeight.w400,
                       ),
+                      cursorColor: Colors.white,
                       decoration: const InputDecoration.collapsed(
                         hintText: "Message Agent",
                         hintStyle: TextStyle(
-                          color: Colors.white,
+                          color: Color(0xFF676767),
                           fontWeight: FontWeight.w400,
                           fontSize: 20.0,
                         ),
@@ -67,17 +74,17 @@ class _HomeState extends State<Home> {
                     height: 32,
                     width: 32,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: text.isEmpty
+                          ? const Color(0xFF676767)
+                          : Colors.white,
                       borderRadius: BorderRadius.circular(16.0),
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(4.0),
+                    child: const Padding(
+                      padding: EdgeInsets.all(4.0),
                       child: Icon(
                         Icons.keyboard_arrow_right,
                         size: 24,
-                        color: _textEditingController.text.isEmpty
-                            ? const Color(0xFF676767)
-                            : Colors.white,
+                        color: Color(0xFF2e2e2e),
                       ),
                     ),
                   ),
