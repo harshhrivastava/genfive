@@ -1,11 +1,11 @@
 import 'dart:math';
 
 class Intel {
-  Future<String> fetchResponse() async {
+  static Future<String> fetchResponse(String query) async {
     int randomInteger = Random().nextInt(10) + 1;
     await Future.delayed(
       Duration(seconds: randomInteger)
     );
-    return 'This is a response';
+    return 'This is a response from Agent';
   }
 }

@@ -8,8 +8,9 @@ enum MessageType {
 abstract class Message {
   final String messageId;
   final DateTime createdAt;
+  final String message;
 
-  Message()
+  Message(this.message)
     : messageId = const Uuid().v4(),
       createdAt = DateTime.now();
 
@@ -24,11 +25,9 @@ abstract class Message {
 }
 
 class UserMessage extends Message {
-  final String message;
-  UserMessage(this.message);
+  UserMessage(super.message);
 }
 
 class AgentMessage extends Message {
-  final String message;
-  AgentMessage(this.message);
+  AgentMessage(super.message);
 }
