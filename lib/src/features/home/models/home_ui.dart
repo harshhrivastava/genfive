@@ -8,4 +8,5 @@ class HomeUi {
   bool loading = false;
   Map<String, Session>? sessions;
   String? currentSessionId;
+  bool extendScreen = true;
 }

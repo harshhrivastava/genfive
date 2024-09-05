@@ -1,8 +1,4 @@
-import 'dart:ui';
-
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/painting.dart';
 import 'package:genfive/src/core/services/intel/intel.dart';
 import 'package:genfive/src/features/home/models/home_ui.dart';
 import 'package:genfive/src/features/home/models/message.dart';
@@ -67,36 +63,109 @@ class _HomeState extends State<Home> {
   }
 
   Widget _buildWebView([bool extended = true]) {
+    List<String> keys = homeUi.sessions?.keys.toList(growable: true) ?? List<String>.empty(growable: true);
     return Scaffold(
       backgroundColor: const Color(0xFF212121),
-      body: SafeArea(
-        child: Center(
-          child: Container(
-            constraints: const BoxConstraints(
-              maxWidth: 540.0,
+      body: Row(
+        mainAxisSize: MainAxisSize.max,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            width: MediaQuery.of(context).size.width - 720,
+            decoration: const BoxDecoration(
+              color: Color(0xFF171717),
             ),
-            alignment: Alignment.bottomCenter,
-            child: Column(
-              mainAxisSize: MainAxisSize.max,
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                ChatListView(
-                  controller: homeUi.bodyScrollController,
-                  currentSessionId: homeUi.currentSessionId,
-                  sessions: homeUi.sessions,
+            constraints: const BoxConstraints(
+              maxWidth: 270,
+            ),
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.max,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SessionButton(
+                      icon: Icons.add,
+                      text: 'Create New Chat',
+                      active: homeUi.currentSessionId == null,
+                      onPressed: () {
+                        if(homeUi.currentSessionId != null) {
+                          setState(() {
+                            homeUi.currentSessionId = null;
+                          });
+                        }
+                      },
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Divider(
+                        color: Color(0xFF2f2f2f),
+                        height: 1,
+                      ),
+                    ),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: keys.length,
+                        itemBuilder: (context, index) {
+                          return SessionButton(
+                            text: 'Session $index',
+                            active: homeUi.currentSessionId == keys[index],
+                            onPressed: () {
+                              if(keys[index] != homeUi.currentSessionId) {
+                                setState(() {
+                                  homeUi.currentSessionId = keys[index];
+                                });
+                                WidgetsBinding.instance.addPostFrameCallback((_) {
+                                  setState(() {
+                                    homeUi.bodyScrollController.jumpTo(homeUi.bodyScrollController.position.maxScrollExtent);
+                                  });
+                                });
+                              }
+                            },
+                          );
+                        },
+                      ),
+                    )
+                  ],
                 ),
-                ChatInputField(
-                  controller: homeUi.textEditingController,
-                  text: homeUi.text,
-                  loading: homeUi.loading,
-                  onQuerySubmitted: _onQuerySubmitted,
-                  onQuerySubmittedUsingKeyboard: _onQuerySubmittedUsingKeyboard,
-                  onQueryChanged: _onQueryChanged,
-                ),
-              ],
+              ),
             ),
           ),
-        ),
+          Expanded(
+            child: SafeArea(
+              child: Center(
+                child: Container(
+                  constraints: const BoxConstraints(
+                    maxWidth: 540.0,
+                  ),
+                  alignment: Alignment.bottomCenter,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.max,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      ChatListView(
+                        controller: homeUi.bodyScrollController,
+                        currentSessionId: homeUi.currentSessionId,
+                        sessions: homeUi.sessions,
+                      ),
+                      ChatInputField(
+                        controller: homeUi.textEditingController,
+                        text: homeUi.text,
+                        loading: homeUi.loading,
+                        onQuerySubmitted: _onQuerySubmitted,
+                        onQuerySubmittedUsingKeyboard: _onQuerySubmittedUsingKeyboard,
+                        onQueryChanged: _onQueryChanged,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -123,7 +192,7 @@ class _HomeState extends State<Home> {
       ),
       drawer: Drawer(
         width: MediaQuery.of(context).size.width * 0.8,
-        backgroundColor: const Color(0xFF212121),
+        backgroundColor: const Color(0xFF171717),
         shape: const ContinuousRectangleBorder(
           borderRadius: BorderRadius.zero,
         ),
@@ -217,12 +286,8 @@ class _HomeState extends State<Home> {
   @override
   Widget build(BuildContext context) {
     Widget child;
-    if(MediaQuery.of(context).size.width > 600) {
-      if(MediaQuery.of(context).size.width > 720) {
-        child = _buildWebView(false);
-      } else {
-        child = _buildWebView();
-      }
+    if(MediaQuery.of(context).size.width > 970) {
+      child = _buildWebView(false);
     } else {
       child = _buildMobileView();
     }
@@ -233,11 +298,13 @@ class _HomeState extends State<Home> {
 class SessionButton extends StatelessWidget {
   final IconData? icon;
   final String text;
+  final bool active;
   final void Function() onPressed;
 
   const SessionButton({
     super.key,
     this.icon,
+    this.active = false,
     required this.text,
     required this.onPressed,
   });
@@ -246,9 +313,9 @@ class SessionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextButton(
       onPressed: onPressed,
-      style: const ButtonStyle(
-        backgroundColor: WidgetStatePropertyAll(Color(0xFF2f2f2f)),
-        overlayColor: WidgetStatePropertyAll(Color(0xFF676767)),
+      style: ButtonStyle(
+        backgroundColor: active ? const WidgetStatePropertyAll(Color(0xFF2f2f2f)) : null,
+        overlayColor: const WidgetStatePropertyAll(Color(0xFF676767)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.max,
