@@ -1,4 +1,8 @@
+import 'dart:ui';
+
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/painting.dart';
 import 'package:genfive/src/core/services/intel/intel.dart';
 import 'package:genfive/src/features/home/models/home_ui.dart';
 import 'package:genfive/src/features/home/models/message.dart';
@@ -98,8 +102,86 @@ class _HomeState extends State<Home> {
   }
 
   Widget _buildMobileView() {
+    List<String> keys = homeUi.sessions?.keys.toList(growable: true) ?? List<String>.empty(growable: true);
     return Scaffold(
       backgroundColor: const Color(0xFF212121),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF212121),
+        leading: Builder(
+          builder: (context) {
+            return IconButton(
+              onPressed: () {
+                Scaffold.of(context).openDrawer();
+              },
+              icon: const Icon(
+                Icons.menu,
+                color: Colors.white,
+              ),
+            );
+          }
+        ),
+      ),
+      drawer: Drawer(
+        width: MediaQuery.of(context).size.width * 0.8,
+        backgroundColor: const Color(0xFF212121),
+        shape: const ContinuousRectangleBorder(
+          borderRadius: BorderRadius.zero,
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.max,
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SessionButton(
+                  icon: Icons.add,
+                  text: 'Create New Chat',
+                  onPressed: () {
+                    setState(() {
+                      homeUi.currentSessionId = null;
+                    });
+                    Navigator.of(context).pop();
+                  },
+                ),
+                const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Divider(
+                    color: Color(0xFF2f2f2f),
+                    height: 1,
+                  ),
+                ),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: keys.length,
+                    itemBuilder: (context, index) {
+                      return SessionButton(
+                        text: 'Session $index',
+                        onPressed: () {
+                          if(keys[index] != homeUi.currentSessionId) {
+                            setState(() {
+                              homeUi.currentSessionId = keys[index];
+                            });
+                            Navigator.of(context).pop();
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              setState(() {
+                                homeUi.bodyScrollController.jumpTo(homeUi.bodyScrollController.position.maxScrollExtent);
+                              });
+                            });
+                          } else {
+                            Navigator.of(context).pop();
+                          }
+                        },
+                      );
+                    },
+                  ),
+                )
+              ],
+            ),
+          ),
+        ),
+      ),
       body: SafeArea(
         child: Center(
           child: Container(
@@ -145,5 +227,51 @@ class _HomeState extends State<Home> {
       child = _buildMobileView();
     }
     return child;
+  }
+}
+
+class SessionButton extends StatelessWidget {
+  final IconData? icon;
+  final String text;
+  final void Function() onPressed;
+
+  const SessionButton({
+    super.key,
+    this.icon,
+    required this.text,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      onPressed: onPressed,
+      style: const ButtonStyle(
+        backgroundColor: WidgetStatePropertyAll(Color(0xFF2f2f2f)),
+        overlayColor: WidgetStatePropertyAll(Color(0xFF676767)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.max,
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          if(icon != null)
+            Icon(
+              icon,
+              color: Colors.white,
+              size: 20.0,
+            ),
+          const SizedBox(width: 8.0),
+          Text(
+            text,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18.0,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
