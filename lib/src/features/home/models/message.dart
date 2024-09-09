@@ -8,7 +8,7 @@ enum MessageType {
 abstract class Message {
   final String messageId;
   final DateTime createdAt;
-  final String message;
+  String message;
 
   Message(this.message)
     : messageId = const Uuid().v4(),

@@ -1,5 +1,8 @@
+// ignore_for_file: type_literal_in_constant_pattern
+
 import 'package:flutter/material.dart';
 import 'package:genfive/src/core/services/intel/intel.dart';
+import 'package:genfive/src/core/services/intel/response/intel_response.dart';
 import 'package:genfive/src/features/home/models/home_ui.dart';
 import 'package:genfive/src/features/home/models/message.dart';
 import 'package:genfive/src/features/home/models/session.dart';
@@ -35,19 +38,31 @@ class _HomeState extends State<Home> {
       homeUi.text = '';
       homeUi.bodyScrollController.jumpTo(homeUi.bodyScrollController.position.maxScrollExtent);
     });
-    String queryResponse = await Intel.fetchResponse(query);
-    if(queryResponse.isNotEmpty) {
-      Message agentResponse = Message.fromType(MessageType.agent, queryResponse);
-      setState(() {
-        homeUi.loading = false;
-        homeUi.sessions![homeUi.currentSessionId]!.messages!.add(agentResponse);
-        homeUi.bodyScrollController.jumpTo(homeUi.bodyScrollController.position.maxScrollExtent);
-      });
-    } else {
-      setState(() {
-        homeUi.loading = false;
-      });
-    }
+    Stream<IntelResponse> queryStreamResponse = Intel.fetchResponse(query);
+    queryStreamResponse.listen((event) {
+      switch(event.runtimeType) {
+        case IntelFetchResponseInitialResponse:
+          Message agentResponse = Message.fromType(MessageType.agent, "");
+          setState(() {
+            homeUi.sessions![homeUi.currentSessionId]!.messages!.add(agentResponse);
+            homeUi.bodyScrollController.jumpTo(homeUi.bodyScrollController.position.maxScrollExtent);
+          });
+          break;
+        case IntelFetchResponseFetchingResponse:
+          IntelFetchResponseFetchingResponse intelFetchResponseFetchingResponse = event as IntelFetchResponseFetchingResponse;
+          String responseString = intelFetchResponseFetchingResponse.response;
+          setState(() {
+            homeUi.sessions![homeUi.currentSessionId]!.messages!.last.message += responseString;
+            homeUi.bodyScrollController.jumpTo(homeUi.bodyScrollController.position.maxScrollExtent);
+          });
+          break;
+        case IntelFetchResponseFetchedResponse:
+          setState(() {
+            homeUi.loading = false;
+          });
+          break;
+      }
+    });
   }
 
   void _onQueryChanged(String newText) {
