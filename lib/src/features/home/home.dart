@@ -39,31 +39,6 @@ class _HomeState extends State<Home> {
       homeUi.text = '';
       homeUi.bodyScrollController.jumpTo(homeUi.bodyScrollController.position.maxScrollExtent);
     });
-    // Stream<IntelResponse> queryStreamResponse = Intel.fetchResponse(query);
-    // queryStreamResponse.listen((event) {
-    //   switch(event.runtimeType) {
-    //     case IntelFetchResponseInitialResponse:
-    //       Message agentResponse = Message.fromType(MessageType.agent, "");
-    //       setState(() {
-    //         homeUi.sessions![homeUi.currentSessionId]!.messages!.add(agentResponse);
-    //         homeUi.bodyScrollController.jumpTo(homeUi.bodyScrollController.position.maxScrollExtent);
-    //       });
-    //       break;
-    //     case IntelFetchResponseFetchingResponse:
-    //       IntelFetchResponseFetchingResponse intelFetchResponseFetchingResponse = event as IntelFetchResponseFetchingResponse;
-    //       String responseString = intelFetchResponseFetchingResponse.response;
-    //       setState(() {
-    //         homeUi.sessions![homeUi.currentSessionId]!.messages!.last.message += responseString;
-    //         homeUi.bodyScrollController.jumpTo(homeUi.bodyScrollController.position.maxScrollExtent);
-    //       });
-    //       break;
-    //     case IntelFetchResponseFetchedResponse:
-    //       setState(() {
-    //         homeUi.loading = false;
-    //       });
-    //       break;
-    //   }
-    // });
     Stream<List<int>> queryResponseStream = await Intel.fetchQueryResponse(query);
     bool firstResponse = true;
     queryResponseStream.listen((chunk) {
