@@ -1,8 +1,9 @@
 // ignore_for_file: type_literal_in_constant_pattern
 
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:genfive/src/core/services/intel/intel.dart';
-import 'package:genfive/src/core/services/intel/response/intel_response.dart';
 import 'package:genfive/src/features/home/models/home_ui.dart';
 import 'package:genfive/src/features/home/models/message.dart';
 import 'package:genfive/src/features/home/models/session.dart';
@@ -38,30 +39,81 @@ class _HomeState extends State<Home> {
       homeUi.text = '';
       homeUi.bodyScrollController.jumpTo(homeUi.bodyScrollController.position.maxScrollExtent);
     });
-    Stream<IntelResponse> queryStreamResponse = Intel.fetchResponse(query);
-    queryStreamResponse.listen((event) {
-      switch(event.runtimeType) {
-        case IntelFetchResponseInitialResponse:
-          Message agentResponse = Message.fromType(MessageType.agent, "");
-          setState(() {
-            homeUi.sessions![homeUi.currentSessionId]!.messages!.add(agentResponse);
-            homeUi.bodyScrollController.jumpTo(homeUi.bodyScrollController.position.maxScrollExtent);
-          });
-          break;
-        case IntelFetchResponseFetchingResponse:
-          IntelFetchResponseFetchingResponse intelFetchResponseFetchingResponse = event as IntelFetchResponseFetchingResponse;
-          String responseString = intelFetchResponseFetchingResponse.response;
-          setState(() {
-            homeUi.sessions![homeUi.currentSessionId]!.messages!.last.message += responseString;
-            homeUi.bodyScrollController.jumpTo(homeUi.bodyScrollController.position.maxScrollExtent);
-          });
-          break;
-        case IntelFetchResponseFetchedResponse:
-          setState(() {
-            homeUi.loading = false;
-          });
-          break;
+    // Stream<IntelResponse> queryStreamResponse = Intel.fetchResponse(query);
+    // queryStreamResponse.listen((event) {
+    //   switch(event.runtimeType) {
+    //     case IntelFetchResponseInitialResponse:
+    //       Message agentResponse = Message.fromType(MessageType.agent, "");
+    //       setState(() {
+    //         homeUi.sessions![homeUi.currentSessionId]!.messages!.add(agentResponse);
+    //         homeUi.bodyScrollController.jumpTo(homeUi.bodyScrollController.position.maxScrollExtent);
+    //       });
+    //       break;
+    //     case IntelFetchResponseFetchingResponse:
+    //       IntelFetchResponseFetchingResponse intelFetchResponseFetchingResponse = event as IntelFetchResponseFetchingResponse;
+    //       String responseString = intelFetchResponseFetchingResponse.response;
+    //       setState(() {
+    //         homeUi.sessions![homeUi.currentSessionId]!.messages!.last.message += responseString;
+    //         homeUi.bodyScrollController.jumpTo(homeUi.bodyScrollController.position.maxScrollExtent);
+    //       });
+    //       break;
+    //     case IntelFetchResponseFetchedResponse:
+    //       setState(() {
+    //         homeUi.loading = false;
+    //       });
+    //       break;
+    //   }
+    // });
+    Stream<List<int>> queryResponseStream = await Intel.fetchQueryResponse(query);
+    bool firstResponse = true;
+    queryResponseStream.listen((chunk) {
+      if(firstResponse) {
+        firstResponse = false;
+        Message agentResponse = Message.fromType(MessageType.agent, "");
+        setState(() {
+          homeUi.sessions![homeUi.currentSessionId]!.messages!.add(agentResponse);
+          homeUi.bodyScrollController.jumpTo(homeUi.bodyScrollController.position.maxScrollExtent);
+        });
       }
+      final raw = String.fromCharCodes(chunk);
+      final unparsed = raw.split('\n');
+      for(int i = 0; i < unparsed.length; i++) {
+        if(unparsed[i].isNotEmpty) {
+          int start = unparsed[i].indexOf("{");
+          int end = unparsed[i].lastIndexOf("}");
+          if (start != -1 && end != -1 && start < end) {
+            String jsonString = unparsed[i].substring(start, end + 1);
+            Map<String, dynamic> json;
+            try {
+              json = jsonDecode(jsonString);
+            } on Exception catch (_) {
+              if(jsonString.contains("choices")) {
+                jsonString = jsonString.replaceFirst(",", '{');
+              } else {
+                jsonString = jsonString.replaceFirst(",", '{"choices":[{');
+              }
+              jsonString = jsonString.substring(jsonString.indexOf("{"), jsonString.length);
+              try {
+                json = jsonDecode(jsonString);
+              } on Exception catch (_) {
+                continue;
+              }
+            }
+            String? content = json['choices'][0]['delta']['content'];
+            if(content != null && content.isNotEmpty) {
+              setState(() {
+                homeUi.sessions![homeUi.currentSessionId]!.messages!.last.message += content;
+                homeUi.bodyScrollController.jumpTo(homeUi.bodyScrollController.position.maxScrollExtent);
+              });
+            }
+          }
+        }
+      }
+    });
+    await queryResponseStream;
+    setState(() {
+      homeUi.loading = false;
+      homeUi.bodyScrollController.jumpTo(homeUi.bodyScrollController.position.maxScrollExtent);
     });
   }
 
