@@ -51,41 +51,47 @@ class _HomeState extends State<Home> {
         });
       }
       final raw = String.fromCharCodes(chunk);
-      final unparsed = raw.split('\n');
-      for(int i = 0; i < unparsed.length; i++) {
-        if(unparsed[i].isNotEmpty) {
-          int start = unparsed[i].indexOf("{");
-          int end = unparsed[i].lastIndexOf("}");
-          if (start != -1 && end != -1 && start < end) {
-            String jsonString = unparsed[i].substring(start, end + 1);
-            Map<String, dynamic> json;
-            try {
-              json = jsonDecode(jsonString);
-            } on Exception catch (_) {
-              if(jsonString.contains('"choices"')) {
-                jsonString = jsonString.replaceFirst(",", '{');
-              } else {
-                jsonString = jsonString.replaceFirst(",", '{"choices":[{');
-              }
-              jsonString = jsonString.substring(jsonString.indexOf("{"), jsonString.length);
+      if(raw == '[DONE]') {
+        setState(() {
+          homeUi.loading = false;
+          homeUi.bodyScrollController.jumpTo(homeUi.bodyScrollController.position.maxScrollExtent);
+        });
+      } else {
+        List<String> unparsed = raw.split('\n');
+        for(int i = 0; i < unparsed.length; i++) {
+          if(unparsed[i].isNotEmpty) {
+            int start = unparsed[i].indexOf("{");
+            int end = unparsed[i].lastIndexOf("}");
+            if (start != -1 && end != -1 && start < end) {
+              String jsonString = unparsed[i].substring(start, end + 1);
+              Map<String, dynamic> json;
               try {
                 json = jsonDecode(jsonString);
               } on Exception catch (_) {
-                continue;
+                if(jsonString.contains('"choices"')) {
+                  jsonString = jsonString.replaceFirst(",", '{');
+                } else {
+                  jsonString = jsonString.replaceFirst(",", '{"choices":[{');
+                }
+                jsonString = jsonString.substring(jsonString.indexOf("{"), jsonString.length);
+                try {
+                  json = jsonDecode(jsonString);
+                } on Exception catch (_) {
+                  continue;
+                }
               }
-            }
-            String? content = json['choices'][0]['delta']['content'];
-            if(content != null && content.isNotEmpty) {
-              setState(() {
-                homeUi.sessions![homeUi.currentSessionId]!.messages!.last.message += content;
-                homeUi.bodyScrollController.jumpTo(homeUi.bodyScrollController.position.maxScrollExtent);
-              });
+              String? content = json['choices'][0]['delta']['content'];
+              if(content != null && content.isNotEmpty) {
+                setState(() {
+                  homeUi.sessions![homeUi.currentSessionId]!.messages!.last.message += content;
+                  homeUi.bodyScrollController.jumpTo(homeUi.bodyScrollController.position.maxScrollExtent);
+                });
+              }
             }
           }
         }
       }
     });
-    await queryResponseStream;
     setState(() {
       homeUi.loading = false;
       homeUi.bodyScrollController.jumpTo(homeUi.bodyScrollController.position.maxScrollExtent);

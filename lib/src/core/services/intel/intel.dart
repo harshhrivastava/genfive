@@ -32,6 +32,6 @@ class Intel {
       },
     );
     Stream<List<int>> responseStream = response.data.stream as Stream<List<int>>;
-    return responseStream;
+    return responseStream.asBroadcastStream();
   }
 }
