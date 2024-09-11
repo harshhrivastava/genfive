@@ -87,7 +87,7 @@ class _HomeState extends State<Home> {
             try {
               json = jsonDecode(jsonString);
             } on Exception catch (_) {
-              if(jsonString.contains("choices")) {
+              if(jsonString.contains('"choices"')) {
                 jsonString = jsonString.replaceFirst(",", '{');
               } else {
                 jsonString = jsonString.replaceFirst(",", '{"choices":[{');
